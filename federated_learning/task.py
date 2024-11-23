@@ -1,9 +1,9 @@
 import os
 import tensorflow as tf
 from tensorflow import keras
-import numpy as np
+from tensorflow.keras.optimizers import Adam
 
-def load_model():
+def load_model(learning_rate=0.01):
     # Define the CNN model and its optimizer
     input_layer = tf.keras.Input(shape=(28, 28, 1))
 
@@ -24,14 +24,23 @@ def load_model():
 
     model = keras.models.Model(inputs=input_layer, outputs=output_layer)
 
-    model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    optimizer = Adam(learning_rate=learning_rate)
+    model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     return model
 
-def load_dataset():
-    # Load MNIST dataset
+def load_dataset(batch_size):
+    # Load MNIST dataset and prepare batches
     (X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
     X_train = X_train.astype('float32') / 255.0
     X_test = X_test.astype('float32') / 255.0
-    
-    return X_train, y_train, X_test, y_test
+
+    # Expand dimensions to match CNN input requirements
+    X_train = X_train[..., tf.newaxis]
+    X_test = X_test[..., tf.newaxis]
+
+    # Create datasets with batching
+    train_dataset = tf.data.Dataset.from_tensor_slices((X_train, y_train)).shuffle(60000).batch(batch_size)
+    test_dataset = tf.data.Dataset.from_tensor_slices((X_test, y_test)).batch(batch_size)
+
+    return train_dataset, test_dataset
