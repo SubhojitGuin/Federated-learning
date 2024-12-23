@@ -3,22 +3,46 @@ from task import load_dataset, load_model
 from client import Client
 import numpy as np
 
+LABEL_FLIP = {
+    0: 6,
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 4,
+    5: 5,
+    6: 0,
+    7: 7,
+    8: 8,
+    9: 9,
+}
+
 class Server:
-    def __init__(self, num_rounds=1, num_clients=30, local_epochs=1, batch_size=1, learning_rate=0.01):
+    def __init__(self, num_rounds=1, num_clients=30, local_epochs=1, batch_size=1, learning_rate=0.01, poisoned_clients=0):
         self.num_rounds = num_rounds
         self.num_clients = num_clients
         self.epochs = local_epochs
         self.batch_size = batch_size
         self.learning_rate = learning_rate
-        self.model = load_model()
+        self.model = load_model(self.learning_rate)
         self.X_train, self.y_train, self.X_test, self.y_test = load_dataset()
         self.client_counter = 0
+        self.poisoned_clients = poisoned_clients
 
     def get_weights(self):
         return self.model.get_weights()
+    
+    def dataset_flip_label(self, X_train, y_train):
+        for i in range(len(y_train)):
+            y_train[i] = LABEL_FLIP[y_train[i]]
+
+        return X_train, y_train
 
     def create_and_train_client(self, client_id, X_train, y_train, X_test, y_test):
         print(f"############# Client {client_id + 1} ###############")
+
+        if (client_id < self.poisoned_clients):
+            X_train, y_train = self.dataset_flip_label(X_train, y_train)
+            print("%%%%%%% Poisoned %%%%%%%")
 
         # Simulate client call
         client = Client(
@@ -123,9 +147,10 @@ class Server:
 if __name__ == "__main__":
     server = Server(
         num_rounds=10,
-        num_clients=5,
-        local_epochs=10,
+        num_clients=10,
+        local_epochs=2,
         batch_size=32,
         learning_rate=0.01,
+        poisoned_clients=4
     )
     server.run()

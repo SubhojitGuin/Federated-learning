@@ -2,8 +2,9 @@ import os
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
+from tensorflow.keras.optimizers import Adam
 
-def load_model():
+def load_model(learning_rate=0.01):
     # Define the CNN model and its optimizer
     input_layer = tf.keras.Input(shape=(28, 28, 1))
 
@@ -23,6 +24,8 @@ def load_model():
     output_layer = keras.layers.Dense(10, activation='softmax')(dropout2)
 
     model = keras.models.Model(inputs=input_layer, outputs=output_layer)
+    # optimizer = Adam(learning_rate=learning_rate)
+    # model.compile(optimizer=optimizer, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
